@@ -1,0 +1,1510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wildlife Deployment Timeline</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+            color: #333;
+        }
+        h1 { margin: 0 0 5px 0; font-size: 28px; }
+        .subtitle { color: #666; margin-bottom: 20px; font-size: 16px; }
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .control-group {
+            display: flex;
+            gap: 4px;
+            background: #fff;
+            padding: 4px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+        }
+        .control-btn {
+            padding: 8px 16px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #555;
+            transition: all 0.2s;
+        }
+        .control-btn:hover { background: #f0f0f0; }
+        .control-btn.active { background: #333; color: #fff; }
+        .export-btn {
+            padding: 8px 16px;
+            border: 1px solid #333;
+            background: #fff;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+            transition: all 0.2s;
+        }
+        .export-btn:hover { background: #333; color: #fff; }
+        .legend {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            background: #fff;
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .legend-color {
+            width: 24px;
+            height: 16px;
+            border-radius: 3px;
+            border: 1px solid rgba(0,0,0,0.2);
+        }
+        .gantt-container {
+            background: #fff;
+            border-radius: 8px;
+            padding: 0 16px 16px 16px;
+            overflow: auto;
+            border: 1px solid #ddd;
+            max-height: calc(100vh - 200px);
+        }
+        table { border-collapse: separate; border-spacing: 0; width: 100%; }
+        th, td { border: 1px solid #ccc; border-top: none; border-left: none; padding: 0; }
+        th:first-child, td:first-child { border-left: 1px solid #ccc; }
+        tr:first-child th { border-top: 1px solid #ccc; }
+        .month-row th {
+            background: #d0d0d0;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 6px 4px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            box-shadow: 0 1px 0 #d0d0d0;
+        }
+        .header-row th {
+            background: #e8e8e8;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 8px 4px;
+            position: sticky;
+            top: 27px;
+            z-index: 19;
+            box-shadow: 0 -1px 0 #d0d0d0;
+        }
+        .dow-row th {
+            background: #f0f0f0;
+            font-size: 11px;
+            font-weight: 500;
+            padding: 3px 4px;
+            text-align: center;
+            position: sticky;
+            top: 57px;
+            z-index: 18;
+            box-shadow: 0 -1px 0 #e8e8e8, 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .dow-row th.weekend-day { color: #e74c3c; }
+        /* Corner cell sticky in both axes */
+        .task-name-header {
+            position: sticky;
+            left: 0;
+            z-index: 12;
+        }
+        .month-row .task-name-header { background: #d0d0d0; }
+        .header-row .task-name-header { background: #e8e8e8; }
+        .dow-row .task-name-header { background: #f0f0f0; }
+        .date-header {
+            min-width: 36px;
+            text-align: center;
+        }
+        .task-name-header {
+            min-width: 220px;
+            max-width: 220px;
+            width: 220px;
+            text-align: left;
+            padding-left: 12px !important;
+        }
+        .task-row td { height: 36px; }
+        .task-name {
+            font-size: 14px;
+            font-weight: 500;
+            padding: 8px 44px 8px 12px;
+            white-space: nowrap;
+            background: #fafafa;
+            border-right: 2px solid #999;
+            position: sticky;
+            left: 0;
+            z-index: 5;
+            min-width: 220px;
+            max-width: 220px;
+            width: 220px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .day-cell {
+            min-width: 36px;
+            max-width: 36px;
+            position: relative;
+        }
+        .weekend { background: #f0f0f0; }
+        .today-marker {
+            position: relative;
+        }
+        .today-marker::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: #ff5722;
+            z-index: 4;
+        }
+        .today-header {
+            background: #fff3e0 !important;
+            color: #e65100;
+            font-weight: 700;
+        }
+        .site-header {
+            background: #333 !important;
+            color: #fff;
+            font-size: 18px;
+            font-weight: 600;
+            padding: 14px 16px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .site-header:hover { background: #444 !important; }
+        .site-header td { background: inherit; border-color: #333; padding: 14px 16px !important; }
+        .site-indicator {
+            display: inline-block;
+            width: 16px;
+            margin-right: 8px;
+            font-family: monospace;
+        }
+        .task-row.collapsed, .add-task-row.collapsed { display: none; }
+        /* Status colors */
+        .bar-pending { background: rgba(33, 150, 243, 0.3); }
+        .bar-inprogress { background: #F57C00; }
+        .bar-done { background: #4CAF50; }
+        /* Status context menu */
+        .status-menu {
+            display: none;
+            position: fixed;
+            z-index: 200;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            padding: 4px 0;
+            min-width: 140px;
+        }
+        .status-menu.show { display: block; }
+        .status-menu-item {
+            padding: 6px 14px;
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .status-menu-item:hover { background: #f0f0f0; }
+        .status-menu-item.active { font-weight: 700; }
+        .status-menu-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .status-menu-dot.pending { background: rgba(33, 150, 243, 0.5); }
+        .status-menu-dot.inprogress { background: #F57C00; }
+        .status-menu-dot.done { background: #4CAF50; }
+        /* Drag and drop */
+        .task-row.dragging { opacity: 0.6; background: #fffde7; }
+        .day-cell.drag-preview {
+            background: rgba(255, 193, 7, 0.5) !important;
+            outline: 2px dashed #ffc107;
+        }
+        .day-cell.draggable { cursor: grab; }
+        .day-cell.draggable:active { cursor: grabbing; }
+        /* Tooltip */
+        .tooltip {
+            position: absolute;
+            background: #333;
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            z-index: 100;
+            pointer-events: none;
+            white-space: nowrap;
+            display: none;
+        }
+        /* Week/Month view adjustments */
+        .week-cell {
+            min-width: 100px;
+            text-align: center;
+            font-size: 12px;
+        }
+        .month-cell {
+            min-width: 150px;
+            text-align: center;
+        }
+        /* Resize handles - visible circular sliders */
+        .resize-handle {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #fff;
+            border: 2px solid #333;
+            cursor: ew-resize;
+            z-index: 15;
+            opacity: 0;
+            transition: opacity 0.15s, transform 0.15s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        .resize-handle-left { left: -7px; }
+        .resize-handle-right { right: -7px; }
+        .task-row:hover .resize-handle,
+        .resize-handle:hover,
+        .resize-handle.active { opacity: 1; }
+        .resize-handle:hover { transform: translateY(-50%) scale(1.2); }
+        .day-cell.bar-start, .day-cell.bar-end { position: relative; overflow: visible; }
+        /* Add task button */
+        .add-task-row td { background: #fafafa; }
+        .add-task-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: transparent;
+            border: 1px dashed #999;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            color: #666;
+            transition: all 0.2s;
+        }
+        .add-task-btn:hover { background: #e8e8e8; border-color: #333; color: #333; }
+        .add-task-btn .plus { font-size: 16px; font-weight: bold; }
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: #fff;
+            border-radius: 8px;
+            padding: 24px;
+            min-width: 360px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .modal h3 { margin: 0 0 16px 0; font-size: 18px; }
+        .modal-field { margin-bottom: 14px; }
+        .modal-field label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px; color: #555; }
+        .modal-field input, .modal-field select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+        .modal-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .modal-btn.primary { background: #333; color: #fff; }
+        .modal-btn.primary:hover { background: #555; }
+        .modal-btn.secondary { background: #e0e0e0; color: #333; }
+        .modal-btn.secondary:hover { background: #ccc; }
+        /* Task action buttons container */
+        .task-name { position: relative; }
+        .task-actions {
+            position: absolute;
+            right: 4px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            gap: 3px;
+            opacity: 0;
+            transition: opacity 0.15s;
+        }
+        .task-row:hover .task-actions { opacity: 1; }
+        .task-action-btn {
+            width: 16px;
+            height: 16px;
+            border: none;
+            color: #fff;
+            border-radius: 3px;
+            font-size: 10px;
+            line-height: 16px;
+            text-align: center;
+            cursor: pointer;
+            padding: 0;
+        }
+        .task-action-btn.edit { background: #3498db; }
+        .task-action-btn.delete { background: #e74c3c; }
+        .task-action-btn:hover { filter: brightness(1.2); }
+        /* Edit site name button */
+        .edit-site-btn {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: none;
+            background: rgba(255,255,255,0.3);
+            color: #fff;
+            border-radius: 50%;
+            font-size: 12px;
+            line-height: 20px;
+            text-align: center;
+            cursor: pointer;
+            margin-left: 10px;
+            opacity: 0;
+            transition: opacity 0.15s;
+            vertical-align: middle;
+        }
+        .site-header:hover .edit-site-btn { opacity: 0.8; }
+        .edit-site-btn:hover { opacity: 1 !important; }
+        /* Row reorder drag */
+        .task-row.row-dragging { opacity: 0.4; background: #e3f2fd; }
+        .task-row.row-drag-over td:first-child { border-top: 3px solid #2196F3; }
+        .drag-handle {
+            display: inline-block;
+            cursor: grab;
+            color: #bbb;
+            font-size: 14px;
+            margin-right: 4px;
+            vertical-align: middle;
+        }
+        .drag-handle:active { cursor: grabbing; }
+        .task-row:hover .drag-handle { color: #666; }
+        /* Column resize handle */
+        .col-resize-handle {
+            position: absolute;
+            right: -3px;
+            top: 0;
+            bottom: 0;
+            width: 6px;
+            cursor: col-resize;
+            z-index: 25;
+            background: transparent;
+        }
+        .col-resize-handle:hover,
+        .col-resize-handle.active {
+            background: rgba(33, 150, 243, 0.4);
+        }
+        .task-name-header { position: relative; }
+    </style>
+</head>
+<body>
+    <h1>Wildlife Detection Deployment Timeline</h1>
+    <p class="subtitle">3 Sites | Mar 10 - Apr 10, 2026 | 12 Tasks</p>
+
+    <div class="controls">
+        <div class="control-group">
+            <button class="control-btn active" data-view="day">Day</button>
+            <button class="control-btn" data-view="week">Week</button>
+            <button class="control-btn" data-view="month">Month</button>
+        </div>
+        <div class="control-group" style="background:#e8f5e9;border-color:#4caf50;">
+            <button class="control-btn" id="sheets-sync" title="Sync with Google Sheets">Sync Sheets</button>
+            <button class="control-btn" id="sheets-push" title="Push to Google Sheets">Push</button>
+        </div>
+        <button class="control-btn" id="add-site-btn" style="background:#fff;border:1px solid #333;border-radius:6px;">+ Add Site</button>
+        <span id="sync-status" style="font-size:12px;color:#27ae60;margin-left:8px;"></span>
+    </div>
+
+    <div class="legend">
+        <div class="legend-item"><div class="legend-color bar-pending"></div> Pending</div>
+        <div class="legend-item"><div class="legend-color bar-inprogress"></div> In Progress</div>
+        <div class="legend-item"><div class="legend-color bar-done"></div> Done</div>
+    </div>
+
+    <div class="gantt-container">
+        <table id="gantt-table"></table>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <div class="modal-overlay" id="add-task-modal">
+        <div class="modal">
+            <h3>Add New Task</h3>
+            <input type="hidden" id="modal-site">
+            <div class="modal-field">
+                <label>Task Name</label>
+                <input type="text" id="modal-task-name" placeholder="Enter task name">
+            </div>
+            <div class="modal-field">
+                <label>Type</label>
+                <select id="modal-task-type">
+                    <option value="camera">Camera / Inference Pod</option>
+                    <option value="sound">Sound Pod</option>
+                    <option value="monitoring">Monitoring</option>
+                    <option value="verification">Verification</option>
+                    <option value="data">Data</option>
+                    <option value="network">Network/Wifi</option>
+                    <option value="hardware">Hardware/Buy</option>
+                </select>
+            </div>
+            <div class="modal-field">
+                <label>Status</label>
+                <select id="modal-task-status">
+                    <option value="pending">Pending</option>
+                    <option value="inprogress">In Progress</option>
+                    <option value="done">Done</option>
+                </select>
+            </div>
+            <div class="modal-field">
+                <label>Start Date</label>
+                <input type="date" id="modal-start-date">
+            </div>
+            <div class="modal-field">
+                <label>End Date</label>
+                <input type="date" id="modal-end-date">
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn secondary" id="modal-cancel">Cancel</button>
+                <button class="modal-btn primary" id="modal-save">Add Task</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Task Modal -->
+    <div class="modal-overlay" id="edit-task-modal">
+        <div class="modal">
+            <h3>Edit Task</h3>
+            <input type="hidden" id="edit-task-idx">
+            <div class="modal-field">
+                <label>Task Name</label>
+                <input type="text" id="edit-task-name">
+            </div>
+            <div class="modal-field">
+                <label>Type</label>
+                <select id="edit-task-type">
+                    <option value="camera">Camera / Inference Pod</option>
+                    <option value="sound">Sound Pod</option>
+                    <option value="monitoring">Monitoring</option>
+                    <option value="verification">Verification</option>
+                    <option value="data">Data</option>
+                    <option value="network">Network/Wifi</option>
+                    <option value="hardware">Hardware/Buy</option>
+                    <option value="inference">Inference</option>
+                </select>
+            </div>
+            <div class="modal-field">
+                <label>Status</label>
+                <select id="edit-task-status">
+                    <option value="pending">Pending</option>
+                    <option value="inprogress">In Progress</option>
+                    <option value="done">Done</option>
+                </select>
+            </div>
+            <div class="modal-field">
+                <label>Start Date</label>
+                <input type="date" id="edit-start-date">
+            </div>
+            <div class="modal-field">
+                <label>End Date</label>
+                <input type="date" id="edit-end-date">
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn secondary" id="edit-cancel">Cancel</button>
+                <button class="modal-btn primary" id="edit-save">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Site Name Modal -->
+    <div class="modal-overlay" id="edit-site-modal">
+        <div class="modal">
+            <h3>Edit Site Name</h3>
+            <input type="hidden" id="edit-site-num">
+            <div class="modal-field">
+                <label>Site Name</label>
+                <input type="text" id="edit-site-name">
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn secondary" id="edit-site-cancel">Cancel</button>
+                <button class="modal-btn primary" id="edit-site-save">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Context Menu -->
+    <div class="status-menu" id="status-menu">
+        <div class="status-menu-item" data-status="pending"><span class="status-menu-dot pending"></span>Pending</div>
+        <div class="status-menu-item" data-status="inprogress"><span class="status-menu-dot inprogress"></span>In Progress</div>
+        <div class="status-menu-item" data-status="done"><span class="status-menu-dot done"></span>Done</div>
+    </div>
+
+    <script>
+        let tasks = [
+            // SITE 1: MAES (Farm) - matches Google Sheet
+            {site: 1, name: 'Deploy corn', start: '2026-03-10', end: '2026-03-10', type: 'deployment', status: 'pending'},
+            {site: 1, name: 'Monitor Corn', start: '2026-03-11', end: '2026-03-17', type: 'monitoring', status: 'pending'},
+            {site: 1, name: '3 Sound Pods Developed', start: '2026-03-10', end: '2026-03-13', type: 'hardware', status: 'pending'},
+            {site: 1, name: 'Testing Hardware', start: '2026-03-13', end: '2026-03-14', type: 'verification', status: 'pending'},
+            {site: 1, name: 'Nepal - PCB design', start: '2026-03-10', end: '2026-03-14', type: 'hardware', status: 'pending'},
+            {site: 1, name: 'Final 4 parts ready', start: '2026-03-14', end: '2026-03-14', type: 'hardware', status: 'pending'},
+            {site: 1, name: 'PCB Print', start: '2026-03-15', end: '2026-03-18', type: 'sound', status: 'pending'},
+            {site: 1, name: 'Test sound pods', start: '2026-03-15', end: '2026-03-17', type: 'sound', status: 'pending'},
+            {site: 1, name: 'Fix bugs or issues', start: '2026-03-17', end: '2026-03-17', type: 'verification', status: 'pending'},
+            {site: 1, name: 'Deploy system in MAES', start: '2026-03-18', end: '2026-03-18', type: 'camera', status: 'pending'},
+            {site: 1, name: 'Monitor and see if things work', start: '2026-03-18', end: '2026-03-24', type: 'monitoring', status: 'pending'},
+
+            // SITE 2: Bipen's House (Home)
+            {site: 2, name: 'Deploy camera and sound pods', start: '2026-03-20', end: '2026-03-20', type: 'camera', status: 'pending'},
+
+            // SITE 3: Dr Roy (Home)
+            {site: 3, name: 'Deploy camera and sound pods', start: '2026-03-20', end: '2026-03-20', type: 'deployment', status: 'pending'}
+        ];
+
+        let siteNames = {
+            1: 'SITE 1: MAES (Farm)',
+            2: "SITE 2: Bipen's House (Home)",
+            3: 'SITE 3: Dr Roy (Home)'
+        };
+        const savedSiteNames = localStorage.getItem('ganttSiteNames');
+        if (savedSiteNames) Object.assign(siteNames, JSON.parse(savedSiteNames));
+
+        const startDate = new Date('2026-03-09');
+        const endDate = new Date('2026-04-11');
+        const days = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        let currentView = 'day';
+        let collapsedSites = JSON.parse(localStorage.getItem('ganttCollapsedSites') || '{}');
+        let statusMenuTaskIdx = null;
+        let statusMenuDate = null;
+
+        // Load saved task modifications
+        const savedTasks = localStorage.getItem('ganttTaskModifications');
+        if (savedTasks) {
+            const mods = JSON.parse(savedTasks);
+            // Create a set of original task identifiers
+            const originalTaskKeys = new Set(tasks.map(t => `${t.site}|${t.name}`));
+            mods.forEach(mod => {
+                const key = `${mod.site}|${mod.name}`;
+                const task = tasks.find(t => t.site === mod.site && t.name === mod.name);
+                if (task) {
+                    task.start = mod.start;
+                    task.end = mod.end;
+                    task.status = mod.status || 'pending';
+                    task.dayStatus = mod.dayStatus || {};
+                } else {
+                    // New task added by user
+                    tasks.push({ site: mod.site, name: mod.name, start: mod.start, end: mod.end, type: mod.type || 'camera', status: mod.status || 'pending', dayStatus: mod.dayStatus || {} });
+                }
+            });
+            // Remove tasks that were deleted (in original but not in mods)
+            const modKeys = new Set(mods.map(m => `${m.site}|${m.name}`));
+            for (let i = tasks.length - 1; i >= 0; i--) {
+                const key = `${tasks[i].site}|${tasks[i].name}`;
+                if (originalTaskKeys.has(key) && !modKeys.has(key)) {
+                    tasks.splice(i, 1);
+                }
+            }
+        }
+
+        function dateStr(d) { return d.toISOString().split('T')[0]; }
+        function isWeekend(d) { return d.getDay() === 0 || d.getDay() === 6; }
+        function getMonthName(d) {
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            return months[d.getMonth()];
+        }
+        function getWeekNumber(d) {
+            const firstDay = new Date(d.getFullYear(), 0, 1);
+            return Math.ceil(((d - firstDay) / 86400000 + firstDay.getDay() + 1) / 7);
+        }
+
+        function buildMonthSpans() {
+            const spans = [];
+            let currentMonth = -1;
+            let count = 0;
+            for (let i = 0; i < days; i++) {
+                const d = new Date(startDate);
+                d.setDate(d.getDate() + i);
+                if (d.getMonth() !== currentMonth) {
+                    if (count > 0) spans.push({ month: getMonthName(new Date(startDate.getTime() + (i - 1) * 86400000)), count });
+                    currentMonth = d.getMonth();
+                    count = 1;
+                } else {
+                    count++;
+                }
+            }
+            if (count > 0) {
+                const lastD = new Date(startDate);
+                lastD.setDate(lastD.getDate() + days - 1);
+                spans.push({ month: getMonthName(lastD), count });
+            }
+            return spans;
+        }
+
+        function buildWeekSpans() {
+            const spans = [];
+            let currentWeek = -1;
+            let count = 0;
+            let weekStart = null;
+            for (let i = 0; i < days; i++) {
+                const d = new Date(startDate);
+                d.setDate(d.getDate() + i);
+                const wk = getWeekNumber(d);
+                if (wk !== currentWeek) {
+                    if (count > 0) spans.push({ week: currentWeek, count, start: weekStart });
+                    currentWeek = wk;
+                    weekStart = dateStr(d);
+                    count = 1;
+                } else {
+                    count++;
+                }
+            }
+            if (count > 0) spans.push({ week: currentWeek, count, start: weekStart });
+            return spans;
+        }
+
+        function render() {
+            const table = document.getElementById('gantt-table');
+            let html = '';
+
+            if (currentView === 'day') {
+                html = renderDayView();
+            } else if (currentView === 'week') {
+                html = renderWeekView();
+            } else {
+                html = renderMonthView();
+            }
+
+            table.innerHTML = html;
+            attachEventListeners();
+        }
+
+        function renderDayView() {
+            const monthSpans = buildMonthSpans();
+            let html = '<thead>';
+
+            // Month row
+            html += '<tr class="month-row"><th class="task-name-header" rowspan="3">Task<div class="col-resize-handle" id="col-resize"></div></th>';
+            monthSpans.forEach(m => {
+                html += `<th colspan="${m.count}">${m.month}</th>`;
+            });
+            html += '</tr>';
+
+            // Day number row
+            html += '<tr class="header-row">';
+            for (let i = 0; i < days; i++) {
+                const d = new Date(startDate);
+                d.setDate(d.getDate() + i);
+                let cls = 'date-header';
+                if (isWeekend(d)) cls += ' weekend';
+                if (dateStr(d) === dateStr(today)) cls += ' today-header';
+                html += `<th class="${cls}">${d.getDate()}</th>`;
+            }
+            html += '</tr>';
+
+            // Day-of-week row
+            const dowLetters = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+            html += '<tr class="dow-row">';
+            for (let i = 0; i < days; i++) {
+                const d = new Date(startDate);
+                d.setDate(d.getDate() + i);
+                const dow = d.getDay();
+                const letter = dowLetters[dow];
+                const cls = (dow === 0 || dow === 6) ? ' class="weekend-day"' : '';
+                html += `<th${cls}>${letter}</th>`;
+            }
+            html += '</tr></thead><tbody>';
+
+            // Tasks by site
+            const siteIds = Object.keys(siteNames).map(Number).sort((a,b)=>a-b); for (const site of siteIds) {
+                const collapsed = collapsedSites[site] || false;
+                const indicator = collapsed ? '+' : '-';
+                html += `<tr class="site-header" data-site="${site}"><td colspan="${days + 1}"><span class="site-indicator">${indicator}</span>${siteNames[site]}<button class="edit-site-btn" data-site="${site}" title="Edit site name">&#9998;</button></td></tr>`;
+
+                const siteTasks = tasks.filter(t => t.site === site);
+                siteTasks.forEach((t, idx) => {
+                    const rowClass = collapsed ? 'task-row collapsed' : 'task-row';
+                    const taskGlobalIdx = tasks.indexOf(t);
+                    html += `<tr class="${rowClass}" data-site="${site}" data-task-idx="${taskGlobalIdx}" draggable="true">`;
+                    html += `<td class="task-name"><span class="drag-handle" draggable="true" data-task-idx="${taskGlobalIdx}">&#9776;</span>${t.name}<span class="task-actions"><button class="task-action-btn edit" data-task-idx="${taskGlobalIdx}" title="Edit task">&#9998;</button><button class="task-action-btn delete" data-task-idx="${taskGlobalIdx}" title="Delete task">x</button></span></td>`;
+                    for (let i = 0; i < days; i++) {
+                        const d = new Date(startDate);
+                        d.setDate(d.getDate() + i);
+                        const ds = dateStr(d);
+                        let cls = 'day-cell';
+                        if (isWeekend(d)) cls += ' weekend';
+                        if (dateStr(d) === dateStr(today)) cls += ' today-marker';
+                        const inRange = ds >= t.start && ds <= t.end;
+                        const isStart = ds === t.start;
+                        const isEnd = ds === t.end;
+                        let cellContent = '';
+                        if (inRange) {
+                            const cellStatus = (t.dayStatus && t.dayStatus[ds]) || t.status || 'pending';
+                            cls += ` bar-${cellStatus} draggable`;
+                            if (isStart) {
+                                cls += ' bar-start';
+                                cellContent += `<div class="resize-handle resize-handle-left" data-task-idx="${taskGlobalIdx}" data-edge="left"></div>`;
+                            }
+                            if (isEnd) {
+                                cls += ' bar-end';
+                                cellContent += `<div class="resize-handle resize-handle-right" data-task-idx="${taskGlobalIdx}" data-edge="right"></div>`;
+                            }
+                        }
+                        const tooltip = inRange ? `data-task="${t.name}" data-start="${t.start}" data-end="${t.end}" data-type="${t.type}" data-status="${t.status || 'pending'}"` : '';
+                        html += `<td class="${cls}" data-date="${ds}" ${tooltip}>${cellContent}</td>`;
+                    }
+                    html += '</tr>';
+                });
+                // Add task row
+                const addRowClass = collapsed ? 'add-task-row collapsed' : 'add-task-row';
+                html += `<tr class="${addRowClass}" data-site="${site}"><td class="task-name" style="padding:4px 8px;"><button class="add-task-btn" data-site="${site}"><span class="plus">+</span> Add Task</button></td>`;
+                for (let i = 0; i < days; i++) html += '<td></td>';
+                html += '</tr>';
+            }
+            html += '</tbody>';
+            return html;
+        }
+
+        function renderWeekView() {
+            const weekSpans = buildWeekSpans();
+            const monthSpans = buildMonthSpans();
+
+            let html = '<thead>';
+            // Month row
+            html += '<tr class="month-row"><th class="task-name-header" rowspan="2">Task<div class="col-resize-handle" id="col-resize"></div></th>';
+            let weekIdx = 0;
+            let daysProcessed = 0;
+            monthSpans.forEach(m => {
+                let weeksInMonth = 0;
+                let remaining = m.count;
+                while (remaining > 0 && weekIdx < weekSpans.length) {
+                    const wDays = Math.min(weekSpans[weekIdx].count - (daysProcessed > 0 ? daysProcessed : 0), remaining);
+                    if (daysProcessed === 0 || daysProcessed + wDays >= weekSpans[weekIdx].count) {
+                        weeksInMonth++;
+                    }
+                    remaining -= wDays;
+                    if (daysProcessed + wDays >= weekSpans[weekIdx].count) {
+                        weekIdx++;
+                        daysProcessed = 0;
+                    } else {
+                        daysProcessed += wDays;
+                    }
+                }
+                html += `<th colspan="${weeksInMonth || 1}">${m.month}</th>`;
+            });
+            html += '</tr>';
+
+            // Week row
+            html += '<tr class="header-row">';
+            weekSpans.forEach(w => {
+                html += `<th class="week-cell">W${w.week}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+
+            // Tasks
+            const siteIds = Object.keys(siteNames).map(Number).sort((a,b)=>a-b); for (const site of siteIds) {
+                const collapsed = collapsedSites[site] || false;
+                const indicator = collapsed ? '+' : '-';
+                html += `<tr class="site-header" data-site="${site}"><td colspan="${weekSpans.length + 1}"><span class="site-indicator">${indicator}</span>${siteNames[site]}</td></tr>`;
+
+                const siteTasks = tasks.filter(t => t.site === site);
+                siteTasks.forEach(t => {
+                    const rowClass = collapsed ? 'task-row collapsed' : 'task-row';
+                    html += `<tr class="${rowClass}" data-site="${site}"><td class="task-name">${t.name}</td>`;
+                    weekSpans.forEach(w => {
+                        const weekStart = new Date(w.start);
+                        const weekEnd = new Date(weekStart);
+                        weekEnd.setDate(weekEnd.getDate() + w.count - 1);
+                        const taskStart = new Date(t.start);
+                        const taskEnd = new Date(t.end);
+                        let cls = 'week-cell';
+                        if (taskStart <= weekEnd && taskEnd >= weekStart) {
+                            cls += ` bar-${t.status || 'pending'}`;
+                        }
+                        html += `<td class="${cls}" data-task="${t.name}" data-start="${t.start}" data-end="${t.end}" data-type="${t.type}" data-status="${t.status || 'pending'}"></td>`;
+                    });
+                    html += '</tr>';
+                });
+            }
+            html += '</tbody>';
+            return html;
+        }
+
+        function renderMonthView() {
+            const monthSpans = buildMonthSpans();
+            let html = '<thead><tr class="header-row" style="top:0"><th class="task-name-header">Task<div class="col-resize-handle" id="col-resize"></div></th>';
+            monthSpans.forEach(m => {
+                html += `<th class="month-cell">${m.month}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+
+            const siteIds = Object.keys(siteNames).map(Number).sort((a,b)=>a-b); for (const site of siteIds) {
+                const collapsed = collapsedSites[site] || false;
+                const indicator = collapsed ? '+' : '-';
+                html += `<tr class="site-header" data-site="${site}"><td colspan="${monthSpans.length + 1}"><span class="site-indicator">${indicator}</span>${siteNames[site]}</td></tr>`;
+
+                const siteTasks = tasks.filter(t => t.site === site);
+                siteTasks.forEach(t => {
+                    const rowClass = collapsed ? 'task-row collapsed' : 'task-row';
+                    html += `<tr class="${rowClass}" data-site="${site}"><td class="task-name">${t.name}</td>`;
+                    let dayOffset = 0;
+                    monthSpans.forEach(m => {
+                        const monthStart = new Date(startDate);
+                        monthStart.setDate(monthStart.getDate() + dayOffset);
+                        const monthEnd = new Date(monthStart);
+                        monthEnd.setDate(monthEnd.getDate() + m.count - 1);
+                        const taskStart = new Date(t.start);
+                        const taskEnd = new Date(t.end);
+                        let cls = 'month-cell';
+                        if (taskStart <= monthEnd && taskEnd >= monthStart) {
+                            cls += ` bar-${t.status || 'pending'}`;
+                        }
+                        html += `<td class="${cls}" data-task="${t.name}" data-start="${t.start}" data-end="${t.end}" data-type="${t.type}" data-status="${t.status || 'pending'}"></td>`;
+                        dayOffset += m.count;
+                    });
+                    html += '</tr>';
+                });
+            }
+            html += '</tbody>';
+            return html;
+        }
+
+        function attachEventListeners() {
+            // Tooltip
+            const tooltip = document.getElementById('tooltip');
+            document.querySelectorAll('[data-task]').forEach(cell => {
+                cell.addEventListener('mouseenter', (e) => {
+                    const task = e.target.dataset.task;
+                    const start = e.target.dataset.start;
+                    const end = e.target.dataset.end;
+                    const type = e.target.dataset.type;
+                    if (task) {
+                        const status = e.target.dataset.status || '';
+                        const statusLabel = {pending: 'Pending', inprogress: 'In Progress', done: 'Done'}[status] || status;
+                        tooltip.innerHTML = `<strong>${task}</strong><br>${start} to ${end}<br>Type: ${type}<br>Status: ${statusLabel}`;
+                        tooltip.style.display = 'block';
+                    }
+                });
+                cell.addEventListener('mouseleave', () => {
+                    tooltip.style.display = 'none';
+                });
+                cell.addEventListener('mousemove', (e) => {
+                    tooltip.style.left = (e.pageX + 10) + 'px';
+                    tooltip.style.top = (e.pageY + 10) + 'px';
+                });
+            });
+
+            // Collapse/expand sites
+            document.querySelectorAll('.site-header').forEach(header => {
+                header.addEventListener('click', () => {
+                    const site = header.dataset.site;
+                    collapsedSites[site] = !collapsedSites[site];
+                    localStorage.setItem('ganttCollapsedSites', JSON.stringify(collapsedSites));
+                    render();
+                });
+            });
+
+            // Right-click context menu to change status on bar cells (per-day) or task name (whole task)
+            const statusMenu = document.getElementById('status-menu');
+            document.querySelectorAll('.task-row').forEach(row => {
+                const taskIdx = parseInt(row.dataset.taskIdx);
+                if (isNaN(taskIdx)) return;
+                // Per-day: right-click on bar cell
+                row.querySelectorAll('.day-cell.draggable, .week-cell, .month-cell').forEach(cell => {
+                    if (cell.classList.contains('bar-pending') || cell.classList.contains('bar-inprogress') || cell.classList.contains('bar-done')) {
+                        cell.addEventListener('contextmenu', (e) => {
+                            e.preventDefault();
+                            statusMenuTaskIdx = taskIdx;
+                            statusMenuDate = cell.dataset.date || null;
+                            const t = tasks[taskIdx];
+                            const current = statusMenuDate && t.dayStatus ? (t.dayStatus[statusMenuDate] || t.status || 'pending') : (t.status || 'pending');
+                            statusMenu.querySelectorAll('.status-menu-item').forEach(item => {
+                                item.classList.toggle('active', item.dataset.status === current);
+                            });
+                            statusMenu.style.left = e.clientX + 'px';
+                            statusMenu.style.top = e.clientY + 'px';
+                            statusMenu.classList.add('show');
+                        });
+                    }
+                });
+                // Whole task: right-click on task name
+                const nameCell = row.querySelector('.task-name');
+                if (nameCell) {
+                    nameCell.addEventListener('contextmenu', (e) => {
+                        e.preventDefault();
+                        statusMenuTaskIdx = taskIdx;
+                        statusMenuDate = null; // whole task
+                        const current = tasks[taskIdx]?.status || 'pending';
+                        statusMenu.querySelectorAll('.status-menu-item').forEach(item => {
+                            item.classList.toggle('active', item.dataset.status === current);
+                        });
+                        statusMenu.style.left = e.clientX + 'px';
+                        statusMenu.style.top = e.clientY + 'px';
+                        statusMenu.classList.add('show');
+                    });
+                }
+            });
+
+            // Drag and drop (day view only)
+            if (currentView === 'day') {
+                setupDragDrop();
+                setupResize();
+            }
+
+            // Add task buttons
+            document.querySelectorAll('.add-task-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const site = parseInt(btn.dataset.site);
+                    openAddTaskModal(site);
+                });
+            });
+
+            // Delete task buttons
+            document.querySelectorAll('.task-action-btn.delete').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const taskIdx = parseInt(btn.dataset.taskIdx);
+                    if (confirm('Delete this task?')) {
+                        tasks.splice(taskIdx, 1);
+                        saveTaskModifications();
+                        render();
+                    }
+                });
+            });
+
+            // Edit task buttons
+            document.querySelectorAll('.task-action-btn.edit').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const taskIdx = parseInt(btn.dataset.taskIdx);
+                    openEditTaskModal(taskIdx);
+                });
+            });
+
+            // Edit site name buttons
+            document.querySelectorAll('.edit-site-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const site = parseInt(btn.dataset.site);
+                    openEditSiteModal(site);
+                });
+            });
+
+            // Row reorder via drag handles
+            setupRowReorder();
+        }
+
+        let dragState = null;
+
+        function setupDragDrop() {
+            document.querySelectorAll('.task-row').forEach(row => {
+                const taskIdx = parseInt(row.dataset.taskIdx);
+                if (isNaN(taskIdx)) return;
+                const task = tasks[taskIdx];
+                if (!task) return;
+
+                const cells = row.querySelectorAll('.day-cell');
+                cells.forEach(cell => {
+                    if (cell.classList.contains('draggable')) {
+                        cell.draggable = true;
+                        cell.addEventListener('dragstart', (e) => {
+                            dragState = { taskIdx, task, originalStart: task.start, originalEnd: task.end };
+                            row.classList.add('dragging');
+                            e.dataTransfer.effectAllowed = 'move';
+                            e.dataTransfer.setData('text/plain', taskIdx);
+                        });
+                        cell.addEventListener('dragend', () => {
+                            row.classList.remove('dragging');
+                            document.querySelectorAll('.drag-preview').forEach(c => c.classList.remove('drag-preview'));
+                            dragState = null;
+                        });
+                    }
+
+                    cell.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                        if (dragState && dragState.task.site === task.site) {
+                            cell.classList.add('drag-preview');
+                        }
+                    });
+                    cell.addEventListener('dragleave', () => {
+                        cell.classList.remove('drag-preview');
+                    });
+                    cell.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        cell.classList.remove('drag-preview');
+                        if (!dragState) return;
+
+                        const dropDate = cell.dataset.date;
+                        if (!dropDate) return;
+
+                        const t = tasks[dragState.taskIdx];
+                        const duration = Math.ceil((new Date(t.end) - new Date(t.start)) / 86400000);
+                        const newStart = new Date(dropDate);
+                        const newEnd = new Date(newStart);
+                        newEnd.setDate(newEnd.getDate() + duration);
+
+                        t.start = dateStr(newStart);
+                        t.end = dateStr(newEnd);
+
+                        // Save to localStorage
+                        saveTaskModifications();
+                        render();
+                    });
+                });
+            });
+        }
+
+        function saveTaskModifications() {
+            const mods = tasks.map(t => ({ site: t.site, name: t.name, start: t.start, end: t.end, type: t.type, status: t.status || 'pending', dayStatus: t.dayStatus || {} }));
+            localStorage.setItem('ganttTaskModifications', JSON.stringify(mods));
+        }
+
+        let resizeState = null;
+
+        // Document-level listeners - added ONCE (not inside setupResize)
+        document.addEventListener('mousemove', (e) => {
+            if (!resizeState) return;
+            let cell = document.elementFromPoint(e.clientX, e.clientY);
+            // Traverse up to find day-cell if we hit the resize handle
+            while (cell && !cell.classList.contains('day-cell')) {
+                cell = cell.parentElement;
+            }
+            if (!cell) return;
+            const newDate = cell.dataset.date;
+            if (!newDate) return;
+            const task = tasks[resizeState.taskIdx];
+            if (resizeState.edge === 'left') {
+                if (newDate <= task.end) task.start = newDate;
+            } else {
+                if (newDate >= task.start) task.end = newDate;
+            }
+            // Don't render() here - causes sticking. Render on mouseup only.
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (resizeState) {
+                saveTaskModifications();
+                resizeState = null;
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+                render(); // Render once at end
+            }
+        });
+
+        function setupResize() {
+            document.querySelectorAll('.resize-handle').forEach(handle => {
+                handle.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const taskIdx = parseInt(handle.dataset.taskIdx);
+                    const edge = handle.dataset.edge;
+                    const task = tasks[taskIdx];
+                    if (!task) return;
+                    resizeState = { taskIdx, edge };
+                    handle.classList.add('active');
+                    document.body.style.cursor = 'ew-resize';
+                    document.body.style.userSelect = 'none';
+                });
+            });
+        }
+
+        // Modal functions
+        function openAddTaskModal(site) {
+            document.getElementById('modal-site').value = site;
+            document.getElementById('modal-task-name').value = '';
+            document.getElementById('modal-task-type').value = 'camera';
+            document.getElementById('modal-task-status').value = 'pending';
+            document.getElementById('modal-start-date').value = dateStr(today);
+            document.getElementById('modal-end-date').value = dateStr(today);
+            document.getElementById('add-task-modal').classList.add('show');
+            document.getElementById('modal-task-name').focus();
+        }
+
+        function closeAddTaskModal() {
+            document.getElementById('add-task-modal').classList.remove('show');
+        }
+
+        document.getElementById('modal-cancel').addEventListener('click', closeAddTaskModal);
+        document.getElementById('add-task-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'add-task-modal') closeAddTaskModal();
+        });
+
+        document.getElementById('modal-save').addEventListener('click', () => {
+            const site = parseInt(document.getElementById('modal-site').value);
+            const name = document.getElementById('modal-task-name').value.trim();
+            const type = document.getElementById('modal-task-type').value;
+            const status = document.getElementById('modal-task-status').value;
+            const start = document.getElementById('modal-start-date').value;
+            const end = document.getElementById('modal-end-date').value;
+            if (!name) { alert('Please enter a task name'); return; }
+            if (!start || !end) { alert('Please select dates'); return; }
+            if (start > end) { alert('End date must be after start date'); return; }
+            tasks.push({ site, name, start, end, type, status });
+            saveTaskModifications();
+            closeAddTaskModal();
+            render();
+        });
+
+        // Edit Task Modal
+        function openEditTaskModal(taskIdx) {
+            const t = tasks[taskIdx];
+            if (!t) return;
+            document.getElementById('edit-task-idx').value = taskIdx;
+            document.getElementById('edit-task-name').value = t.name;
+            document.getElementById('edit-task-type').value = t.type;
+            document.getElementById('edit-task-status').value = t.status || 'pending';
+            document.getElementById('edit-start-date').value = t.start;
+            document.getElementById('edit-end-date').value = t.end;
+            document.getElementById('edit-task-modal').classList.add('show');
+            document.getElementById('edit-task-name').focus();
+        }
+        function closeEditTaskModal() {
+            document.getElementById('edit-task-modal').classList.remove('show');
+        }
+        document.getElementById('edit-cancel').addEventListener('click', closeEditTaskModal);
+        document.getElementById('edit-task-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'edit-task-modal') closeEditTaskModal();
+        });
+        document.getElementById('edit-save').addEventListener('click', () => {
+            const taskIdx = parseInt(document.getElementById('edit-task-idx').value);
+            const t = tasks[taskIdx];
+            if (!t) return;
+            const name = document.getElementById('edit-task-name').value.trim();
+            const type = document.getElementById('edit-task-type').value;
+            const status = document.getElementById('edit-task-status').value;
+            const start = document.getElementById('edit-start-date').value;
+            const end = document.getElementById('edit-end-date').value;
+            if (!name) { alert('Please enter a task name'); return; }
+            if (!start || !end) { alert('Please select dates'); return; }
+            if (start > end) { alert('End date must be after start date'); return; }
+            t.name = name;
+            t.type = type;
+            t.status = status;
+            t.start = start;
+            t.end = end;
+            saveTaskModifications();
+            closeEditTaskModal();
+            render();
+        });
+
+        // Edit Site Name Modal
+        function openEditSiteModal(site) {
+            document.getElementById('edit-site-num').value = site;
+            document.getElementById('edit-site-name').value = siteNames[site];
+            document.getElementById('edit-site-modal').classList.add('show');
+            document.getElementById('edit-site-name').focus();
+        }
+        function closeEditSiteModal() {
+            document.getElementById('edit-site-modal').classList.remove('show');
+        }
+        document.getElementById('edit-site-cancel').addEventListener('click', closeEditSiteModal);
+        document.getElementById('edit-site-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'edit-site-modal') closeEditSiteModal();
+        });
+        document.getElementById('edit-site-save').addEventListener('click', () => {
+            const site = parseInt(document.getElementById('edit-site-num').value);
+            const name = document.getElementById('edit-site-name').value.trim();
+            if (!name) { alert('Please enter a site name'); return; }
+            siteNames[site] = name;
+            localStorage.setItem('ganttSiteNames', JSON.stringify(siteNames));
+            closeEditSiteModal();
+            render();
+        });
+
+        // Row reorder (drag task rows up/down within a site)
+        let rowDragSrcIdx = null;
+        function setupRowReorder() {
+            document.querySelectorAll('.task-row[draggable]').forEach(row => {
+                const taskIdx = parseInt(row.dataset.taskIdx);
+                if (isNaN(taskIdx)) return;
+
+                row.addEventListener('dragstart', (e) => {
+                    // Only start row reorder if drag started from the drag handle or task name area
+                    const target = e.target;
+                    if (target.classList.contains('day-cell') || target.classList.contains('draggable')) return;
+                    rowDragSrcIdx = taskIdx;
+                    row.classList.add('row-dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/row-reorder', String(taskIdx));
+                });
+                row.addEventListener('dragend', () => {
+                    document.querySelectorAll('.row-dragging').forEach(r => r.classList.remove('row-dragging'));
+                    document.querySelectorAll('.row-drag-over').forEach(r => r.classList.remove('row-drag-over'));
+                    rowDragSrcIdx = null;
+                });
+                row.addEventListener('dragover', (e) => {
+                    if (rowDragSrcIdx === null) return;
+                    const targetIdx = parseInt(row.dataset.taskIdx);
+                    if (isNaN(targetIdx)) return;
+                    if (tasks[rowDragSrcIdx] && tasks[targetIdx] && tasks[rowDragSrcIdx].site === tasks[targetIdx].site) {
+                        e.preventDefault();
+                        document.querySelectorAll('.row-drag-over').forEach(r => r.classList.remove('row-drag-over'));
+                        row.classList.add('row-drag-over');
+                    }
+                });
+                row.addEventListener('dragleave', () => {
+                    row.classList.remove('row-drag-over');
+                });
+                row.addEventListener('drop', (e) => {
+                    if (rowDragSrcIdx === null) return;
+                    e.preventDefault();
+                    row.classList.remove('row-drag-over');
+                    const targetIdx = parseInt(row.dataset.taskIdx);
+                    if (isNaN(targetIdx) || rowDragSrcIdx === targetIdx) return;
+                    if (tasks[rowDragSrcIdx].site !== tasks[targetIdx].site) return;
+                    const movedTask = tasks.splice(rowDragSrcIdx, 1)[0];
+                    const insertAt = targetIdx > rowDragSrcIdx ? targetIdx - 1 : targetIdx;
+                    tasks.splice(targetIdx > rowDragSrcIdx ? insertAt + 1 : insertAt, 0, movedTask);
+                    saveTaskModifications();
+                    render();
+                });
+            });
+        }
+
+        // View toggle
+        document.querySelectorAll('.control-btn[data-view]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.control-btn[data-view]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentView = btn.dataset.view;
+                render();
+            });
+        });
+
+        // CSV functions
+        function generateCSV() {
+            let csv = 'Site,SiteNumber,Task,Start,End,Type,Status\n';
+            tasks.forEach(t => {
+                csv += `"${siteNames[t.site]}",${t.site},"${t.name}","${t.start}","${t.end}","${t.type}","${t.status || 'pending'}"\n`;
+            });
+            return csv;
+        }
+
+        function downloadCSV(csv, filename) {
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function parseCSV(text) {
+            const lines = text.trim().split('\n');
+            if (lines.length < 2) return [];
+            const parsed = [];
+            for (let i = 1; i < lines.length; i++) {
+                const match = lines[i].match(/(?:"([^"]*)"|([^,]*)),?/g);
+                if (!match || match.length < 5) continue;
+                const clean = match.map(m => m.replace(/^"|"$/g, '').replace(/,$/,'').replace(/^"|"$/g, ''));
+                const site = parseInt(clean[1]) || 1;
+                const name = clean[2];
+                const start = clean[3];
+                const end = clean[4];
+                const type = clean[5] || 'camera';
+                const status = clean[6] || 'pending';
+                if (name && start && end) {
+                    parsed.push({ site, name, start, end, type, status });
+                }
+            }
+            return parsed;
+        }
+
+        // Google Sheets Integration
+        const SHEETS_API = 'https://script.google.com/macros/s/AKfycbx9w2gXuD2_9Wb5S-Au0LYcQ0purKM9E269pZJG_P19e0dyjI9BJBU0i3QjbSNQCJ__Og/exec';
+
+        function updateSyncStatus(msg, isError) {
+            const el = document.getElementById('sync-status');
+            el.textContent = msg;
+            el.style.color = isError ? '#e74c3c' : '#27ae60';
+            if (msg) setTimeout(() => el.textContent = '', 3000);
+        }
+
+        async function loadFromSheets() {
+            updateSyncStatus('Loading...', false);
+            try {
+                const res = await fetch(SHEETS_API);
+                const data = await res.json();
+                if (!Array.isArray(data) || data.length === 0) {
+                    updateSyncStatus('No data in sheet', true);
+                    return;
+                }
+                tasks.length = 0;
+                data.forEach(row => {
+                    const site = parseInt(row.SiteNumber) || 1;
+                    const name = row.Task;
+                    const rawStart = row.Start;
+                    const rawEnd = row.End;
+                    const start = rawStart ? rawStart.slice(0, 10) : '';
+                    const end = rawEnd ? rawEnd.slice(0, 10) : '';
+                    const type = row.Type || 'camera';
+                    const status = row.Status || 'pending';
+                    let dayStatus = {};
+                    try { if (row.DayStatus) dayStatus = JSON.parse(row.DayStatus); } catch(e) {}
+                    if (name && start && end) {
+                        tasks.push({ site, name, start, end, type, status, dayStatus });
+                    }
+                });
+                saveTaskModifications();
+                render();
+                updateSyncStatus('Synced ' + tasks.length + ' tasks', false);
+            } catch (err) {
+                console.error('Sheets load error:', err);
+                updateSyncStatus('Sync failed', true);
+            }
+        }
+
+        async function pushToSheets() {
+            updateSyncStatus('Pushing...', false);
+            try {
+                const payload = tasks.map(t => ({
+                    Site: siteNames[t.site] || 'Unknown',
+                    SiteNumber: t.site,
+                    Task: t.name,
+                    Start: t.start,
+                    End: t.end,
+                    Type: t.type,
+                    Status: t.status || 'pending',
+                    DayStatus: JSON.stringify(t.dayStatus || {})
+                }));
+                console.log('Push payload:', JSON.stringify(payload, null, 2));
+                const res = await fetch(SHEETS_API, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                updateSyncStatus('Pushed ' + tasks.length + ' tasks', false);
+            } catch (err) {
+                console.error('Sheets push error:', err);
+                updateSyncStatus('Push failed', true);
+            }
+        }
+
+        document.getElementById('sheets-sync').addEventListener('click', loadFromSheets);
+        document.getElementById('sheets-push').addEventListener('click', () => {
+            if (confirm('Push all tasks to Google Sheets? This will overwrite the sheet.')) {
+                pushToSheets();
+            }
+        });
+
+        // Column resize
+        let taskColWidth = parseInt(localStorage.getItem('ganttTaskColWidth')) || 220;
+        function applyTaskColWidth() {
+            document.querySelectorAll('.task-name, .task-name-header').forEach(el => {
+                el.style.minWidth = taskColWidth + 'px';
+                el.style.maxWidth = taskColWidth + 'px';
+                el.style.width = taskColWidth + 'px';
+            });
+        }
+        function setupColResize() {
+            const handle = document.getElementById('col-resize');
+            if (!handle) return;
+            handle.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handle.classList.add('active');
+                const startX = e.clientX;
+                const startWidth = taskColWidth;
+                function onMove(e2) {
+                    taskColWidth = Math.max(150, Math.min(500, startWidth + (e2.clientX - startX)));
+                    applyTaskColWidth();
+                }
+                function onUp() {
+                    handle.classList.remove('active');
+                    document.removeEventListener('mousemove', onMove);
+                    document.removeEventListener('mouseup', onUp);
+                    localStorage.setItem('ganttTaskColWidth', taskColWidth);
+                }
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onUp);
+            });
+        }
+
+        // Add Site
+        document.getElementById('add-site-btn').addEventListener('click', () => {
+            const name = prompt('Enter new site name:');
+            if (!name || !name.trim()) return;
+            const existingIds = Object.keys(siteNames).map(Number);
+            const newId = existingIds.length > 0 ? Math.max(...existingIds) + 1 : 1;
+            siteNames[newId] = name.trim();
+            localStorage.setItem('ganttSiteNames', JSON.stringify(siteNames));
+            saveTaskModifications();
+            render();
+        });
+
+        // Hook col resize into render
+        const origRender = render;
+        render = function() {
+            origRender();
+            applyTaskColWidth();
+            setupColResize();
+        };
+
+        // Status menu click handlers
+        document.querySelectorAll('.status-menu-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const menu = document.getElementById('status-menu');
+                if (statusMenuTaskIdx === null || statusMenuTaskIdx === undefined) return;
+                const t = tasks[statusMenuTaskIdx];
+                if (!t) return;
+                if (statusMenuDate) {
+                    // Per-day status
+                    if (!t.dayStatus) t.dayStatus = {};
+                    t.dayStatus[statusMenuDate] = item.dataset.status;
+                } else {
+                    // Whole task status - clear day overrides
+                    t.status = item.dataset.status;
+                    t.dayStatus = {};
+                }
+                saveTaskModifications();
+                menu.classList.remove('show');
+                statusMenuTaskIdx = null;
+                statusMenuDate = null;
+                render();
+            });
+        });
+        document.addEventListener('click', () => {
+            document.getElementById('status-menu').classList.remove('show');
+        });
+
+        // Initial render
+        render();
+    </script>
+</body>
+</html>
