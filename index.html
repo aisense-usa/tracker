@@ -573,23 +573,23 @@
     <script>
         let tasks = [
             // SITE 1: MAES (Farm) - matches Google Sheet
-            {site: 1, name: 'Deploy corn', start: '2026-03-10', end: '2026-03-10', type: 'deployment', status: 'pending'},
-            {site: 1, name: 'Monitor Corn', start: '2026-03-11', end: '2026-03-17', type: 'monitoring', status: 'pending'},
-            {site: 1, name: '3 Sound Pods Developed', start: '2026-03-10', end: '2026-03-13', type: 'hardware', status: 'pending'},
-            {site: 1, name: 'Testing Hardware', start: '2026-03-13', end: '2026-03-14', type: 'verification', status: 'pending'},
-            {site: 1, name: 'Nepal - PCB design', start: '2026-03-10', end: '2026-03-14', type: 'hardware', status: 'pending'},
-            {site: 1, name: 'Final 4 parts ready', start: '2026-03-14', end: '2026-03-14', type: 'hardware', status: 'pending'},
-            {site: 1, name: 'PCB Print', start: '2026-03-15', end: '2026-03-18', type: 'sound', status: 'pending'},
-            {site: 1, name: 'Test sound pods', start: '2026-03-15', end: '2026-03-17', type: 'sound', status: 'pending'},
-            {site: 1, name: 'Fix bugs or issues', start: '2026-03-17', end: '2026-03-17', type: 'verification', status: 'pending'},
-            {site: 1, name: 'Deploy system in MAES', start: '2026-03-18', end: '2026-03-18', type: 'camera', status: 'pending'},
-            {site: 1, name: 'Monitor and see if things work', start: '2026-03-18', end: '2026-03-24', type: 'monitoring', status: 'pending'},
+            {site: 1, name: 'Deploy corn', start: '2026-03-10', end: '2026-03-10', type: 'deployment', status: 'pending', dayStatus: {}},
+            {site: 1, name: 'Monitor Corn', start: '2026-03-11', end: '2026-03-17', type: 'monitoring', status: 'pending', dayStatus: {}},
+            {site: 1, name: '3 Sound Pods Developed', start: '2026-03-10', end: '2026-03-13', type: 'hardware', status: 'pending', dayStatus: {}},
+            {site: 1, name: 'Testing Hardware', start: '2026-03-13', end: '2026-03-14', type: 'verification', status: 'pending', dayStatus: {}},
+            {site: 1, name: 'Nepal - PCB design', start: '2026-03-10', end: '2026-03-14', type: 'hardware', status: 'pending', dayStatus: {}},
+            {site: 1, name: 'Final 4 parts ready', start: '2026-03-14', end: '2026-03-14', type: 'hardware', status: 'pending', dayStatus: {}},
+            {site: 1, name: 'PCB Print', start: '2026-03-15', end: '2026-03-18', type: 'sound', status: 'pending', dayStatus: {}},
+            {site: 1, name: 'Test sound pods', start: '2026-03-15', end: '2026-03-17', type: 'sound', status: 'pending', dayStatus: {}},
+            {site: 1, name: 'Fix bugs or issues', start: '2026-03-17', end: '2026-03-17', type: 'verification', status: 'pending', dayStatus: {}},
+            {site: 1, name: 'Deploy system in MAES', start: '2026-03-18', end: '2026-03-18', type: 'camera', status: 'pending', dayStatus: {}},
+            {site: 1, name: 'Monitor and see if things work', start: '2026-03-18', end: '2026-03-24', type: 'monitoring', status: 'pending', dayStatus: {}},
 
             // SITE 2: Bipen's House (Home)
-            {site: 2, name: 'Deploy camera and sound pods', start: '2026-03-20', end: '2026-03-20', type: 'camera', status: 'pending'},
+            {site: 2, name: 'Deploy camera and sound pods', start: '2026-03-20', end: '2026-03-20', type: 'camera', status: 'pending', dayStatus: {}},
 
             // SITE 3: Dr Roy (Home)
-            {site: 3, name: 'Deploy camera and sound pods', start: '2026-03-20', end: '2026-03-20', type: 'deployment', status: 'pending'}
+            {site: 3, name: 'Deploy camera and sound pods', start: '2026-03-20', end: '2026-03-20', type: 'deployment', status: 'pending', dayStatus: {}}
         ];
 
         let siteNames = {
@@ -1505,6 +1505,9 @@
 
         // Initial render
         render();
+
+        // Auto-sync from Google Sheets on load
+        loadFromSheets();
     </script>
 </body>
 </html>
