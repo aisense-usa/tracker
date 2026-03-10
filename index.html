@@ -572,6 +572,11 @@
         <div class="status-menu-item" data-status="done"><span class="status-menu-dot done"></span>Done</div>
     </div>
 
+    <!-- Sync Context Menu -->
+    <div class="status-menu" id="sync-menu">
+        <div class="status-menu-item" id="auto-sync-toggle">Auto Sync: OFF</div>
+    </div>
+
     <script>
         let tasks = [
             // SITE 1: MAES (Farm) - matches Google Sheet
@@ -1502,15 +1507,30 @@
             });
         });
 
-        // Right-click Sync Sheets button to toggle auto-sync
+        // Right-click Sync Sheets button to show sync menu
         document.getElementById('sheets-sync').addEventListener('contextmenu', (e) => {
             e.preventDefault();
+            e.stopPropagation();
+            const syncMenu = document.getElementById('sync-menu');
+            const toggle = document.getElementById('auto-sync-toggle');
+            toggle.textContent = autoSyncInterval ? 'Auto Sync: ON' : 'Auto Sync: OFF';
+            if (autoSyncInterval) toggle.classList.add('auto-sync-on');
+            else toggle.classList.remove('auto-sync-on');
+            syncMenu.style.left = e.clientX + 'px';
+            syncMenu.style.top = e.clientY + 'px';
+            syncMenu.classList.add('show');
+        });
+
+        // Auto-sync toggle click
+        document.getElementById('auto-sync-toggle').addEventListener('click', () => {
+            const syncMenu = document.getElementById('sync-menu');
             const btn = document.getElementById('sheets-sync');
             if (autoSyncInterval) {
                 clearInterval(autoSyncInterval);
                 autoSyncInterval = null;
                 btn.textContent = 'Sync Sheets';
                 btn.style.background = '';
+                btn.style.color = '';
             } else {
                 loadFromSheets();
                 autoSyncInterval = setInterval(loadFromSheets, 30000);
@@ -1518,9 +1538,11 @@
                 btn.style.background = '#4CAF50';
                 btn.style.color = '#fff';
             }
+            syncMenu.classList.remove('show');
         });
         document.addEventListener('click', () => {
             document.getElementById('status-menu').classList.remove('show');
+            document.getElementById('sync-menu').classList.remove('show');
         });
 
         // Initial render
