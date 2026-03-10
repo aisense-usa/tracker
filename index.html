@@ -570,8 +570,6 @@
         <div class="status-menu-item" data-status="pending"><span class="status-menu-dot pending"></span>Pending</div>
         <div class="status-menu-item" data-status="inprogress"><span class="status-menu-dot inprogress"></span>In Progress</div>
         <div class="status-menu-item" data-status="done"><span class="status-menu-dot done"></span>Done</div>
-        <div class="status-menu-divider"></div>
-        <div class="status-menu-item" id="auto-sync-toggle">Auto Sync: OFF</div>
     </div>
 
     <script>
@@ -1504,22 +1502,22 @@
             });
         });
 
-        // Auto-sync toggle handler
-        document.getElementById('auto-sync-toggle').addEventListener('click', (e) => {
-            e.stopPropagation();
-            const el = document.getElementById('auto-sync-toggle');
+        // Right-click Sync Sheets button to toggle auto-sync
+        document.getElementById('sheets-sync').addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('sheets-sync');
             if (autoSyncInterval) {
                 clearInterval(autoSyncInterval);
                 autoSyncInterval = null;
-                el.textContent = 'Auto Sync: OFF';
-                el.classList.remove('auto-sync-on');
+                btn.textContent = 'Sync Sheets';
+                btn.style.background = '';
             } else {
                 loadFromSheets();
                 autoSyncInterval = setInterval(loadFromSheets, 30000);
-                el.textContent = 'Auto Sync: ON';
-                el.classList.add('auto-sync-on');
+                btn.textContent = 'Auto Sync ON';
+                btn.style.background = '#4CAF50';
+                btn.style.color = '#fff';
             }
-            document.getElementById('status-menu').classList.remove('show');
         });
         document.addEventListener('click', () => {
             document.getElementById('status-menu').classList.remove('show');
