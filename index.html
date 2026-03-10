@@ -229,6 +229,8 @@
         }
         .status-menu-item:hover { background: #f0f0f0; }
         .status-menu-item.active { font-weight: 700; }
+        .status-menu-divider { height: 1px; background: #e0e0e0; margin: 4px 0; }
+        .auto-sync-on { color: #4CAF50; font-weight: 700; }
         .status-menu-dot {
             width: 10px;
             height: 10px;
@@ -568,6 +570,8 @@
         <div class="status-menu-item" data-status="pending"><span class="status-menu-dot pending"></span>Pending</div>
         <div class="status-menu-item" data-status="inprogress"><span class="status-menu-dot inprogress"></span>In Progress</div>
         <div class="status-menu-item" data-status="done"><span class="status-menu-dot done"></span>Done</div>
+        <div class="status-menu-divider"></div>
+        <div class="status-menu-item" id="auto-sync-toggle">Auto Sync: OFF</div>
     </div>
 
     <script>
@@ -610,6 +614,7 @@
         let collapsedSites = JSON.parse(localStorage.getItem('ganttCollapsedSites') || '{}');
         let statusMenuTaskIdx = null;
         let statusMenuDate = null;
+        let autoSyncInterval = null;
 
         // Load saved task modifications
         const savedTasks = localStorage.getItem('ganttTaskModifications');
@@ -1478,17 +1483,16 @@
 
         // Status menu click handlers
         document.querySelectorAll('.status-menu-item').forEach(item => {
+            if (item.id === 'auto-sync-toggle') return;
             item.addEventListener('click', () => {
                 const menu = document.getElementById('status-menu');
                 if (statusMenuTaskIdx === null || statusMenuTaskIdx === undefined) return;
                 const t = tasks[statusMenuTaskIdx];
                 if (!t) return;
                 if (statusMenuDate) {
-                    // Per-day status
                     if (!t.dayStatus) t.dayStatus = {};
                     t.dayStatus[statusMenuDate] = item.dataset.status;
                 } else {
-                    // Whole task status - clear day overrides
                     t.status = item.dataset.status;
                     t.dayStatus = {};
                 }
@@ -1499,6 +1503,24 @@
                 render();
             });
         });
+
+        // Auto-sync toggle handler
+        document.getElementById('auto-sync-toggle').addEventListener('click', (e) => {
+            e.stopPropagation();
+            const el = document.getElementById('auto-sync-toggle');
+            if (autoSyncInterval) {
+                clearInterval(autoSyncInterval);
+                autoSyncInterval = null;
+                el.textContent = 'Auto Sync: OFF';
+                el.classList.remove('auto-sync-on');
+            } else {
+                loadFromSheets();
+                autoSyncInterval = setInterval(loadFromSheets, 30000);
+                el.textContent = 'Auto Sync: ON';
+                el.classList.add('auto-sync-on');
+            }
+            document.getElementById('status-menu').classList.remove('show');
+        });
         document.addEventListener('click', () => {
             document.getElementById('status-menu').classList.remove('show');
         });
@@ -1507,7 +1529,7 @@
         render();
 
         // Auto-sync from Google Sheets on load
-        loadFromSheets();
+        setTimeout(() => loadFromSheets(), 500);
     </script>
 </body>
 </html>
